@@ -290,18 +290,7 @@ echo "linux-api-headers
 glibc
 binutils$_AXE_MULTILIB_SUFFIX
 gcc$_AXE_MULTILIB_SUFFIX
-libtool$_AXE_MULTILIB_SUFFIX
-zlib
-file
-gmp
-mpfr
-libmpc
-attr
-acl
-isl
-cloog
-glpk
-ppl" > "$_AXE_LISTS_DIR/toolchain.list"
+libtool$_AXE_MULTILIB_SUFFIX" > "$_AXE_LISTS_DIR/toolchain.list"
 	if [[ $? -eq 0 && -s "$_AXE_LISTS_DIR/toolchain.list" ]]; then
 		axe_block "toolchain.list sucsessfully written"
 	else
@@ -356,6 +345,18 @@ texinfo
 dash 
 fakeroot 
 elfutils 
+zlib 
+file 
+gmp 
+mpfr 
+libmpc 
+attr 
+acl 
+isl 
+cloog 
+glpk 
+#ppl is a arch build fail, my try from git not sucsessfull
+#ppl 
 # the rest of the base packages including udev deps
 libsigc++ 
 glibmm 
@@ -4029,99 +4030,6 @@ function build_toolchain()
 			fi
 		fi
 		
-
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "zlib" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag --nocheck --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "zlib"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "file" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag --nocheck --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "file"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "attr" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag $_axe_toolchain_test --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "attr"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "gmp" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag $_axe_toolchain_test --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "gmp"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "isl" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag $_axe_toolchain_test --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "isl"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "mpfr" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag $_axe_toolchain_test --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "mpfr"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "libmpc" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag $_axe_toolchain_test --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "libmpc"
-				_axe_return=$?
-			fi
-		fi
-		
-
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "acl" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag $_axe_toolchain_test --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "acl"
-				_axe_return=$?
-			fi
-		fi
-		
-
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "glpk" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag --nocheck --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "glpk"
-				_axe_return=$?
-			fi
-		fi
-		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "ppl" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag --nocheck --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "ppl"
-				_axe_return=$?
-			fi
-		fi
-		
-		# note cloog is marked without check because it always fails chec, will investigate from gentoo		
-		if [[ $_axe_return -eq 0 ]]; then
-			build_axe_pkgbuild "cloog" --install --nocon "$_AXE_PKGBUILD_DIR" "$_AXE_OPT_TYPE" --nofail --nosuc --notag --nocheck --toolchain
-			if [[ $? -eq 5 || $? -eq 6 || $? -eq 7 || $? -eq 9 ]]; then
-				reset_toolchain "cloog"
-				_axe_return=$?
-			fi
-		fi
 		
 		if [[ $_axe_return -eq 0 ]]; then
 			build_gcc "install-export" $_axe_toolchain_test
