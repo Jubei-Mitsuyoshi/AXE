@@ -1725,11 +1725,11 @@ function toolchain_tag_check()
 	
 	if [[ "$_AXE_MULTILIB_SUFFIX" == "-multilib" ]]; then
 
-		expac "%n %p" | grep -v "$_AXE_PACKAGER_NAME_TOOLCHAIN_MULTILIB" | sed 's/ .*//' | egrep -i "^gcc-multilib$|^gcc-ada-multilib$|^gcc-fortran-multilib$|^gcc-go-multilib$|^gcc-obj-multilib$|^glibc$|libltdl$|^libtool-multilib$|^gcc-libs-multilib$|^binutils-multilib$|^linux-api-headers$|^lib32-glibc$|^lib32-libltdl$|^lib32-libltdl$|^zlib$|^file$|^gmp$|^mpfr$|^libmpc$|^attr$|^acl$|^isl$|^cloog$|^ppl$" > "$_AXE_DIR/scratch"
+		expac "%n %p" | grep -v "$_AXE_PACKAGER_NAME_TOOLCHAIN_MULTILIB" | sed 's/ .*//' | egrep -i "^gcc-multilib$|^gcc-ada-multilib$|^gcc-fortran-multilib$|^gcc-go-multilib$|^gcc-obj-multilib$|^glibc$|libltdl$|^libtool-multilib$|^gcc-libs-multilib$|^binutils-multilib$|^linux-api-headers$|^lib32-glibc$|^lib32-libltdl$|^lib32-libltdl$" > "$_AXE_DIR/scratch"
 
 	else
 		
-		expac "%n %p" | grep -v "$_AXE_PACKAGER_NAME_TOOLCHAIN" | sed 's/ .*//' | egrep -i "^gcc$|^gcc-ada$|^gcc-fortran$|^gcc-go$|^gcc-obj$|^glibc$|^libltdl$|^libtool$|^gcc-libs$|^binutils$|^linux-api-headers$|^zlib$|^file$|^gmp$|^mpfr$|^libmpc$|^attr$|^acl$|^isl$|^cloog$|^ppl$" > "$_AXE_DIR/scratch"
+		expac "%n %p" | grep -v "$_AXE_PACKAGER_NAME_TOOLCHAIN" | sed 's/ .*//' | egrep -i "^gcc$|^gcc-ada$|^gcc-fortran$|^gcc-go$|^gcc-obj$|^glibc$|^libltdl$|^libtool$|^gcc-libs$|^binutils$|^linux-api-headers$" > "$_AXE_DIR/scratch"
 
 	fi
 	
@@ -1764,11 +1764,11 @@ function toolchain_notag_check()
 	
 	if [[ "$_AXE_MULTILIB_SUFFIX" == "-multilib" ]]; then
 
-		expac "%n %p" | grep "$_AXE_PACKAGER_NAME_TOOLCHAIN_MULTILIB" | sed 's/ .*//' | egrep -i "^gcc-multilib$|^gcc-ada-multilib$|^gcc-fortran-multilib$|^gcc-go-multilib$|^gcc-obj-multilib$|^glibc$|libltdl$|^libtool-multilib$|^gcc-libs-multilib$|^binutils-multilib$|^linux-api-headers$|^lib32-glibc$|^lib32-libltdl$|^lib32-libltdl$|^zlib$|^file$|^gmp$|^mpfr$|^libmpc$|^attr$|^acl$|^isl$|^cloog$|^ppl$" > "$_AXE_DIR/scratch"
+		expac "%n %p" | grep "$_AXE_PACKAGER_NAME_TOOLCHAIN_MULTILIB" | sed 's/ .*//' | egrep -i "^gcc-multilib$|^gcc-ada-multilib$|^gcc-fortran-multilib$|^gcc-go-multilib$|^gcc-obj-multilib$|^glibc$|libltdl$|^libtool-multilib$|^gcc-libs-multilib$|^binutils-multilib$|^linux-api-headers$|^lib32-glibc$|^lib32-libltdl$|^lib32-libltdl$" > "$_AXE_DIR/scratch"
 
 	else
 		
-		expac "%n %p" | grep "$_AXE_PACKAGER_NAME_TOOLCHAIN" | sed 's/ .*//' | egrep -i "^gcc$|^gcc-ada$|^gcc-fortran$|^gcc-go$|^gcc-obj$|^glibc$|^libltdl$|^libtool$|^gcc-libs$|^binutils$|^linux-api-headers$|^zlib$|^file$|^gmp$|^mpfr$|^libmpc$|^attr$|^acl$|^isl$|^cloog$|^ppl$" > "$_AXE_DIR/scratch"
+		expac "%n %p" | grep "$_AXE_PACKAGER_NAME_TOOLCHAIN" | sed 's/ .*//' | egrep -i "^gcc$|^gcc-ada$|^gcc-fortran$|^gcc-go$|^gcc-obj$|^glibc$|^libltdl$|^libtool$|^gcc-libs$|^binutils$|^linux-api-headers$" > "$_AXE_DIR/scratch"
 
 	fi
 	
@@ -5539,14 +5539,13 @@ function axe_init_git()
 	local _axe_return
 	_axe_return=0
 	
-	axe_info "we use lsd init as our backup init"
-	lsd_init
-	if [[ $? -eq 0 ]]; then
+
 		build_axe_pkgbuild "axe-runit" "--install" "--nocon" "$_AXE_INPUT_PKGBUILD_DIR" "$_AXE_OPT_TYPE"  "--nofail" "--nosuc" "--tag" "--nocheck"
 		if [[ $? -lt 5 ]]; then
 			build_axe_pkgbuild "axe-runit-scripts" "--install" "--nocon" "$_AXE_INPUT_PKGBUILD_DIR" "$_AXE_OPT_TYPE"  "--nofail" "--nosuc" "--tag" "--nocheck"
 			if [[ $? -lt 5 ]]; then
 				configure_axeinit
+				pacman -Rsn sysvinit svsvinit-tools
 			else
 				axe_fuck "pacman failed to install axe-runit-scripts resetting init"
 				pacman -S systemd-sysvcompat dhcpcd systemd --noconfirm
@@ -5558,9 +5557,7 @@ function axe_init_git()
 			pacman -S systemd-sysvcompat dhcpcd systemd --noconfirm
 			_axe_return=2
 		fi
-	else
-		_axe_return=1
-	fi
+
 
 }
 
