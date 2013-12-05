@@ -1,0 +1,16 @@
+linux-api-headers
+glibc
+binutils
+gcc
+libtool
+zlib
+file
+gmp
+mpfr
+libmpc
+attr
+acl
+isl
+cloog
+glpk
+ppl

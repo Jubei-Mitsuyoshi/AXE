@@ -1,0 +1,49 @@
+syslog-ng --install --nocon   --nofail --nosuc --tag --nocheck
+mkinitcpio --install --nocon   --nofail --nosuc --tag --nocheck
+dbus --install --con   --nofail --nosuc --tag --nocheck
+udev-axe --install --con   --nofail --nosuc --tag 
+pcmciautils --install --nocon   --nofail --nosuc --tag 
+crda --install --nocon   --nofail --nosuc --tag 
+libgusb --install --nocon   --nofail --nosuc --tag 
+pyudev --install --nocon   --nofail --nosuc --tag 
+libatasmart --install --nocon   --nofail --nosuc --tag 
+lockdev --install --nocon   --nofail --nosuc --tag 
+#known arch fail, willnot be back in list till i fix it
+#libcec --install --nocon   --nofail --nosuc --tag 
+syslog-ng --install --nocon   --nofail --nosuc --notag 
+mkinitcpio-busybox --install --nocon   --nofail --nosuc --notag 
+mkinitcpio --install --nocon   --nofail --nosuc --notag 
+dbus --install --nocon   --nofail --nosuc --notag 
+lvm2 --install --nocon   --nofail --nosuc --tag 
+dmraid --install --nocon   --nofail --nosuc --tag 
+mtdev --install --nocon   --nofail --nosuc --tag 
+xf86-input-evdev --install --nocon   --nofail --nosuc --tag 
+xorg-server --install --nocon   --nofail --nosuc --tag 
+xf86-video-nouveau --install --nocon   --nofail --nosuc --tag 
+xf86-video-intel --install --nocon   --nofail --nosuc --tag 
+xf86-video-modesetting --install --nocon   --nofail --nosuc --tag 
+polkit-axe --install --nocon   --nofail --nosuc --tag --nocheck
+consolekit --install --nocon   --nofail --nosuc --tag 
+cronie --install --nocon   --nofail --nosuc --tag 
+libwacom --install --nocon   --nofail --nosuc --tag --nocheck
+colord --install --nocon   --nofail --nosuc --tag --nocheck
+cups --install --nocon   --nofail --nosuc --tag --nocheck
+system-config-printer --install --nocon   --nofail --nosuc --tag --nocheck
+gstreamer0.10-good --install --nocon   --nofail --nosuc --tag --nocheck
+bluez --install --nocon   --nofail --nosuc --tag --nocheck
+mesa --install --nocon   --nofail --nosuc --tag --nocheck
+mysql --install --nocon   --nofail --nosuc --tag --nocheck
+udisks --install --nocon   --nofail --nosuc --tag --nocheck
+udisks2 --install --nocon   --nofail --nosuc --tag --nocheck
+pulseaudio --install --nocon   --nofail --nosuc --tag --nocheck
+upower --install --nocon   --nofail --nosuc --tag --nocheck
+gvfs --install --nocon   --nofail --nosuc --tag --nocheck
+libvirt --install --nocon   --nofail --nosuc --tag --nocheck
+eeze --install --nocon   --nofail --nosuc --tag --nocheck
+networkmanager --install --nocon   --nofail --nosuc --notag 
+modemmanager --install --nocon   --nofail --nosuc --notag 
+packagekit --install --nocon   --nofail --nosuc --notag --nocheck
+pup-volume-monitor --install --nocon   --nofail --nosuc --notag --nocheck
+thunar --install --nocon   --nofail --nosuc --notag 
+udevil --install --nocon   --nofail --nosuc --notag 
+spacefm --install --nocon   --nofail --nosuc --notag 

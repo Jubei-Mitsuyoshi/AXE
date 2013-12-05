@@ -1,0 +1,359 @@
+function stamp_pkgbuild()
+{
+	axe_block "Start of stamp_pkgbuild $1 with $2"
+
+	#first argument is path to PKGBUILD
+		#xxx/path/to/PKGBUILD
+	#second argument is skip rc.conf modifications
+		#--norc .. skip  rc modifications
+		#--rc (or blank/not pressent) .. do  rc modifications 
+		
+		
+	local _axe_return
+	local _axe_version_array_abs
+	local _axe_pkg_rel
+	local _axe_tag_rel
+	local _axe_filename
+	_axe_filename=""
+	_axe_pkg_rel=""
+	_axe_tag_rel=""
+	_axe_return=0
+	
+		#	_axe_abs_ver= ${_axe_version_array_abs[1]}
+		#	_axe_abs_rel= ${_axe_version_array_abs[2]}
+		#	_axe_dir_ver= "${_axe_version_array_dir[1]}"
+		#	_axe_dir_rel= $_arch_rel = "${_axe_version_array_dir[3]}"
+		#	_axe_dir_axe_rel= "${_axe_version_array_dir[4]}"
+		#	axe native flag = "${_axe_version_array_dir[5]}"
+		#	split package flag = "${_axe_version_array_dir[6]}"
+		#	_axe_aur_ver  "${_axe_version_array_aur[1]}"
+		#   _axe_aur_rel   "${_axe_version_array_aur[2]}"
+			
+			#output order of axe_get_vers 
+				#$pkgname(0) 
+				#$pkgver(1)  
+				#$pkgrel(2) 
+				#$_arch_rel(3)
+				#$_axe_rel(4) / axe_native_rel (4)
+				#axe native flag = "axis" / "arch" (5)
+				#split package flag = "split" / "single" (6)
+	
+	_axe_version_array_abs=($(axe_get_vers "$1"))
+	
+	if [[ "${_axe_version_array_abs[2]}" == "null" ]]; then
+		axe_info "pkgrel does not exist this could be because ther genuinly is not one or a parsing mistake, i will display $1/PKGBUILD so you can investigate"
+		any_key 
+		nano "$1/PKGBUILD"
+		axe_menu_active Y "if you want me to add the axe pkg rel ${_AXE_ANY_OTHER_KEY} to do it yourself"
+		read -s -n1 _AXE_TMP_CHAR
+		axe_info "you pressed ${bldcyn}$_AXE_TMP_CHAR"
+		if [[ "$_AXE_TMP_CHAR" == "y" || "$_AXE_TMP_CHAR" == "Y" ]]; then
+			#entry from the PKGBUILDS
+				#pkgrel="${_AXE_PREFIX_REL}.${_AXE_STAGE}.${_arch_rel}.${_axe_rel}.${_AXE_PROCESOR_REL}.${_AXE_SUFFIX_REL}"
+			_axe_tag_rel='pkgrel="${_AXE_PREFIX_REL}.${_AXE_STAGE}.${_arch_rel}.${_axe_rel}.${_AXE_PROCESOR_REL}.${_AXE_SUFFIX_REL}"'
+			if [[ "${_axe_version_array_abs[6]}" == "split" ]]; then
+				sed -i "/epoch=.*/d" "$1/PKGBUILD"
+				axe_info "modifying a CATAGORY --- SPLIT package"
+				sed -i "/pkgbase=.*/i#--------------------" "$1/PKGBUILD"
+				if [[ $? -eq 0 ]]; then
+					sed -i "/pkgbase=.*/a#--------------------" "$1/PKGBUILD"
+					if [[ $? -eq 0 ]]; then
+						sed -i "/arch=.*/i_arch_rel=${_axe_version_array_abs[2]}" "$1/PKGBUILD"
+						if [[ $? -eq 0 ]]; then
+							sed -i "//arch=.*/i_axe_rel=1" "$1/PKGBUILD"
+							if [[ $? -eq 0 ]]; then
+								sed -i "//arch=.*/a$_axe_tag_rel" "$1/PKGBUILD"
+								if [[ $? -eq 0 ]]; then
+									sed -i "/pkgname=.*/i#--------------------" "$1/PKGBUILD" && sed -i "/pkgver=.*/a#--------------------" "$1/PKGBUILD"
+										if [[ $? -eq 0 ]]; then
+										axe_info "sucsessfully added $_axe_tag_rel to $1/PKGBUILD"
+									else
+										axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 3,4 view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+										_axe_return=2
+									fi
+								else
+									axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add pkgrel, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+									_axe_return=2
+								fi
+							else
+								axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add axe rel, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+								_axe_return=2
+							fi
+						else
+							axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add archrel, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+							_axe_return=2
+						fi
+					else
+						axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add spacer 2, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+						_axe_return=2
+					fi
+				else
+					axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 1, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+					_axe_return=2
+				fi
+			else
+				axe_info "modifying a CATAGORY --- SINGLE package"
+				sed -i "/epoch=.*/d" "$1/PKGBUILD"
+				sed -i "/pkgname=.*/i#--------------------" "$1/PKGBUILD"
+				if [[ $? -eq 0 ]]; then
+					sed -i "/pkgname=.*/a#--------------------" "$1/PKGBUILD"
+					if [[ $? -eq 0 ]]; then
+						sed -i "/pkgver=.*/i_arch_rel=${_axe_version_array_abs[2]}" "$1/PKGBUILD"
+						if [[ $? -eq 0 ]]; then
+							sed -i "/pkgver=.*/i_axe_rel=1" "$1/PKGBUILD"
+							if [[ $? -eq 0 ]]; then
+								sed -i "/pkgver=.*/a$_axe_tag_rel" "$1/PKGBUILD"
+								if [[ $? -eq 0 ]]; then
+									sed -i "/pkgver=.*/a#--------------------" "$1/PKGBUILD"
+									if [[ $? -eq 0 ]]; then
+										axe_info "sucsessfully added $_axe_tag_rel to $1/PKGBUILD"
+									else
+										axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 3, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+										_axe_return=2
+									fi
+								else
+									axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add pkgrel, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+									_axe_return=2
+								fi
+							else
+								axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add axe rel, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+								_axe_return=2
+							fi
+						else
+							axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add archrel, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+							_axe_return=2
+						fi
+					else
+						axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add spacer 2, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+						_axe_return=2
+					fi
+				else
+					axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 1, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+					_axe_return=2
+				fi
+			fi
+		else
+			nano "$1/PKGBUILD"
+		fi
+	else
+		#entry from the PKGBUILDS
+				#pkgrel="${_AXE_PREFIX_REL}.${_AXE_STAGE}.${_arch_rel}.${_axe_rel}.${_AXE_PROCESOR_REL}.${_AXE_SUFFIX_REL}"
+		_axe_tag_rel='pkgrel="${_AXE_PREFIX_REL}.${_AXE_STAGE}.${_arch_rel}.${_axe_rel}.${_AXE_PROCESOR_REL}.${_AXE_SUFFIX_REL}"'
+		axe_info "original pkgrel found and is ${_axe_version_array_abs[2]}"
+		axe_info "adding axe pkgrel changes to $1/PKGBUILD am going write $_axe_tag_rel"
+		if [[ "${_axe_version_array_abs[6]}" == "split" ]]; then
+			sed -i "/epoch=.*/d" "$1/PKGBUILD"
+			axe_info "modifying a CATAGORY --- SPLIT package"
+			sed -i "/pkgbase=.*/i#--------------------" "$1/PKGBUILD"
+			if [[ $? -eq 0 ]]; then
+				sed -i "/pkgbase=.*/a#--------------------" "$1/PKGBUILD"
+				if [[ $? -eq 0 ]]; then
+					sed -i "/pkgrel=.*/i_arch_rel=${_axe_version_array_abs[2]}" "$1/PKGBUILD"
+					if [[ $? -eq 0 ]]; then
+						sed -i "/pkgrel=.*/i_axe_rel=1" "$1/PKGBUILD"
+						if [[ $? -eq 0 ]]; then
+							sed -i "s/pkgrel=.*/$_axe_tag_rel/" "$1/PKGBUILD"
+							if [[ $? -eq 0 ]]; then
+								sed -i "/pkgname=.*/i#--------------------" "$1/PKGBUILD" && sed -i "/pkgver=.*/a#--------------------" "$1/PKGBUILD"
+								if [[ $? -eq 0 ]]; then
+									axe_info "sucsessfully added $_axe_tag_rel to $1/PKGBUILD"
+								else
+									axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 3 and 4, view PKGBUILD" 
+									any_key 
+									nano "$1/PKGBUILD"
+									_axe_return=2
+								fi
+							else
+								axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- replace pkgrel, view PKGBUILD"
+								any_key 
+								nano "$1/PKGBUILD"
+								_axe_return=2
+							fi
+						else
+							axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add axe rel, view PKGBUILD"
+							any_key
+							nano "$1/PKGBUILD"
+							_axe_return=2
+						fi
+					else
+						axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add archrel, view PKGBUILD"
+						any_key 
+						nano "$1/PKGBUILD"
+						_axe_return=2
+					fi
+				else
+					axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add spacer 2, view PKGBUILD" 
+					any_key 
+					nano "$1/PKGBUILD"
+					_axe_return=2
+				fi
+			else
+				axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 1, view PKGBUILD"
+				any_key
+				nano "$1/PKGBUILD"
+				_axe_return=2
+			fi
+		else
+			axe_info "modifying a CATAGORY --- SINGLE package"
+			sed -i "/epoch=.*/d" "$1/PKGBUILD"
+			sed -i "/pkgname=.*/i#--------------------" "$1/PKGBUILD"
+			if [[ $? -eq 0 ]]; then
+				sed -i "/pkgname=.*/a#--------------------" "$1/PKGBUILD"
+				if [[ $? -eq 0 ]]; then
+					sed -i "/pkgrel=.*/i_arch_rel=${_axe_version_array_abs[2]}" "$1/PKGBUILD"
+					if [[ $? -eq 0 ]]; then
+						sed -i "/pkgrel=.*/i_axe_rel=1" "$1/PKGBUILD"
+						if [[ $? -eq 0 ]]; then
+							sed -i "/pkgrel=.*/i#--------------------" "$1/PKGBUILD"
+							if [[ $? -eq 0 ]]; then
+								sed -i "s/pkgrel=.*/$_axe_tag_rel/" "$1/PKGBUILD"
+								if [[ $? -eq 0 ]]; then
+									axe_info "sucsessfully added $_axe_tag_rel to $1/PKGBUILD"
+								else
+									axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- replace pkgrel, view PKGBUILD" 
+									any_key 
+									nano "$1/PKGBUILD"
+									_axe_return=2
+								fi
+							else
+								axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 3, view PKGBUILD" 
+								any_key
+								nano "$1/PKGBUILD"
+								_axe_return=2
+							fi
+						else
+							axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add axe rel, view PKGBUILD" 
+							any_key 
+							nano "$1/PKGBUILD"
+							_axe_return=2
+						fi
+					else
+						axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add archrel, view PKGBUILD" 
+						any_key 
+						nano "$1/PKGBUILD"
+						_axe_return=2
+					fi
+				else
+					axe_fuck "$1/PKGBUILD refused to accept pkgrel modification add spacer 2, view PKGBUILD"
+					any_key 
+					nano "$1/PKGBUILD"
+					_axe_return=2
+				fi
+			else
+				axe_fuck "$1/PKGBUILD refused to accept pkgrel modification-- add spacer 1, view PKGBUILD" 
+				any_key 
+				nano "$1/PKGBUILD"
+				_axe_return=2
+			fi
+		fi
+
+	fi
+
+	
+	#insert jubei as maintainer
+	if [[ ! $(grep 'Maintainer: Jubei-Mitsuyoshi' "$1/PKGBUILD") ]]; then
+		axe_info "adding axe maintainer to $1/PKGBUILD"
+		sed -i '2i# Maintainer: Jubei-Mitsuyoshi <jubei.house.of.five.masters@gmail.com>' "$1/PKGBUILD"
+		if [[ $? -eq 0 ]]; then
+			axe_info "sucsessfully added axe maintainer to $1/PKGBUILD"
+		else
+			axe_fuck "PKGBUILD refused to accept packeger modification, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+			_axe_return=3
+		fi
+	else
+		axe_warn "$1/PKGBUILD already has correct maintainer"
+	fi
+	
+	#add axe groupe
+	if [[ $(cat "$1/PKGBUILD" | grep -m 1 'groups=') ]]; then
+		axe_info "adding axe to $1/PKGBUILD groups"
+		sed -i 's/groups=(/groups=(\"axis\" /' "$1/PKGBUILD"
+		if [[ $? -eq 0 ]]; then
+			axe_info "sucsessfully added axe to existing groups in $1/PKGBUILD"
+		else
+			axe_fuck "$1/PKGBUILD refused to accept groupes modification, view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+			_axe_return=4
+		fi
+	else
+		sed -i "/license=.*/agroups=(\"axis\")" "$1/PKGBUILD"
+		if [[ $? -eq 0 ]]; then
+			axe_info "sucsessfully added new axe groupe to $1/PKGBUILD"
+		else
+			axe_fuck "$1/PKGBUILD refused to accept groupes modification view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+			_axe_return=5
+		fi
+	fi
+
+	for _axe_filename in $(ls $1);do
+
+		[[ "$_axe_filename" == "PKGBUILD" && $2 == "--norc" ]] && axe_warn "NOT checking ${bldcyn} $1/$_axe_filename ${bldwht} for rc.d changes-- checks have been turned off "
+		[[ "$_axe_filename" == "PKGBUILD" && ! $2 == "--norc" ]] && axe_warn "NOT checking ${bldcyn} PKGBUILD"
+		[[ ! "$_axe_filename" == "PKGBUILD" && $2 == "--norc" ]] && axe_warn "NOT checking ${bldcyn} $1/$_axe_filename ${bldwht} for rc.d changes-- checks have been turned off "
+		
+		if [[ ! $_axe_filename == "PKGBUILD" && ! $2 == "--norc" ]]; then 
+			axe_info "CHECKING file  $1/$_axe_filename for for rc.d changes"
+			if [[ $(grep '/etc/rc.d/functions' "$1/$_axe_filename") ]]; then
+		
+				axe_info "applying rc.d modifications to file ${bldcyn} $1/$_axe_filename"
+				sed -i \
+					-e 's|stat_busy|msg_busy|g' \
+					-e 's|stat_fail|msg_fail|g' \
+					-e 's|stat_done|msg_ok|g' \
+					-e 's|add_daemon|dmn_add|g' \
+					-e 's|ck_daemon|dmn_running|g' \
+					-e 's|have_daemon|dmn_exists|g' \
+					-e 's|rm_daemon|dmn_rm|g' \
+					-e 's|status|exec_cmd|g' \
+					"$1/$_axe_filename"
+					
+				if [[ ! $? -eq 0 ]]; then
+					axe_fuck "$1/PKGBUILD refused to accept a modification view PKGBUILD" && any_key && nano "$1/PKGBUILD"
+					_axe_return=6
+				fi
+				
+				echo "have applied rc.d modifications to file $1/$_axe_filename" >> "$_AXE_LISTS_DIR/axe_stamp_modifications.list"
+				echo "#----------------axe warning------------------ $1/$_axe_filename altered for rc.d changes" >> "$1/PKGBUILD"
+				
+				# new md5/sha sums for the modified files
+	
+				cd "$1"
+				
+				axe_info "now resetting integ checks on pkgbuild"
+	
+				awk -v newsums="$(makepkg --asroot -g)" '
+BEGIN {
+  if (!newsums) exit 1
+}
+
+/^[[:blank:]]*(md|sha)[[:digit:]]+sums=/,/\)[[:blank:]]*$/ {
+  if (!i) print newsums; i++
+  next
+}
+
+1
+' PKGBUILD > PKGBUILD.new && mv PKGBUILD{.new,}
+
+				cd /root/
+				
+				#warn of systemd refs in $1/$_axe_filename
+				axe_info "checking for systemd refs in $1/$_axe_filename"
+		
+				[[ $(cat "$1/$_axe_filename" | grep 'systemd') ]] && echo "#----------------axe warning------------------ syetemd detected in file $1/$_axe_filename " >> "$1/PKGBUILD" && echo "syetemd detected in file $1/$_axe_filename" >> "$_AXE_LISTS_DIR/axe_stamp_modifications.list"
+			else
+				axe_info "NO rc.d refs found skipping file ${bldcyn} $1/$_axe_filename"
+			fi
+
+		else
+	
+	
+			#warn of systemd refs in $1/$_axe_filename
+			axe_info "checking for systemd refs in $1/$_axe_filename"
+	
+			[[ $(cat "$1/$_axe_filename" | grep 'systemd') ]] && echo "#----------------axe warning------------------ syetemd detected in file $1/$_axe_filename " >> "$1/PKGBUILD" && echo "syetemd detected in file $1/$_axe_filename" >> "$_AXE_LISTS_DIR/axe_stamp_modifications.list"
+	
+		fi
+    done
+	
+
+	return $_axe_return
+}

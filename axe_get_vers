@@ -1,0 +1,56 @@
+#!/bin/bash
+unset pkgname pkgver _arch_rel _axe_rel pkgrel pkgbase _axe_native_rel
+. "$1/PKGBUILD"
+
+if [[ $pkgbase ]];then
+	echo "$pkgbase"
+else
+	if [[ $pkgname ]];then
+		echo "$pkgname"
+	else
+		echo "null"
+	fi
+fi
+
+if [[ $pkgver ]];then
+	echo "$pkgver"
+else
+	echo "null"
+fi
+
+if [[ $pkgrel ]];then
+	echo "$pkgrel"
+else
+	echo "null"
+fi
+
+if [[ $_arch_rel ]];then
+	echo "$_arch_rel"
+else
+	echo "null"
+fi
+
+if [[ $_axe_rel ]];then
+	echo "$_axe_rel"
+else
+	if [[ $_axe_native_rel ]];then
+		echo "$_axe_native_rel"
+	else
+		echo "null"
+	fi
+fi
+
+if [[ $_axe_native_rel ]];then
+	echo "axis"
+else
+	echo "archlinux"
+fi
+
+if [[ $pkgbase ]];then
+	echo "split"
+else
+	echo "single"
+fi
+
+exit 0
+

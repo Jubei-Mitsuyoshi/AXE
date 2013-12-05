@@ -1,0 +1,203 @@
+# setup functions **********************************************************************************************************************************************
+#***************************************************************************************************************************************************************
+
+function check_dir()
+{
+	axe_block "Start of check_dir"
+	
+	[[ ! -d "$_AXE_DIR" ]] && axe_info "creating $_AXE_DIR" && mkdir -pv "$_AXE_DIR"
+	[[ ! -d "$_AXE_CHROOT_BUILD_DIR" ]] && axe_info "creating $_AXE_CHROOT_BUILD_DIR" && mkdir -pv "$_AXE_CHROOT_BUILD_DIR"
+	[[ ! -d "$_AXE_INPUT_PKGBUILD_DIR" ]] && axe_info "creating $_AXE_INPUT_PKGBUILD_DIR" && mkdir -pv "$_AXE_INPUT_PKGBUILD_DIR"
+	[[ ! -d "$_AXE_PKGBUILD_DIR" ]] && axe_info "creating $_AXE_PKGBUILD_DIR" && mkdir -pv "$_AXE_PKGBUILD_DIR"
+	[[ ! -d "$_AXE_USER_OVERIDE_PKGBUILD_DIR" ]] && axe_info "creating $_AXE_USER_OVERIDE_PKGBUILD_DIR" && mkdir -pv "$_AXE_USER_OVERIDE_PKGBUILD_DIR"
+	[[ ! -d "$_AXE_DEV_UPDATE_EXPORT_DIR" ]] && axe_info "creating $_AXE_DEV_UPDATE_EXPORT_DIR" && mkdir -pv "$_AXE_DEV_UPDATE_EXPORT_DIR"
+	[[ ! -d "$_AXE_BINARY_EXPORT_DIR" ]] && axe_info "creating $_AXE_BINARY_EXPORT_DIR" && mkdir -pv "$_AXE_BINARY_EXPORT_DIR"
+	[[ ! -d "$_AXE_BINARY_EXPORT_DIR_X64" ]] && axe_info "creating $_AXE_BINARY_EXPORT_DIR_X64" && mkdir -pv "$_AXE_BINARY_EXPORT_DIR_X64"
+	[[ ! -d "$_AXE_SRC_EXPORT_DIR" ]] && axe_info "creating $_AXE_SRC_EXPORT_DIR" && mkdir -pv "$_AXE_SRC_EXPORT_DIR"
+	[[ ! -d "$_AXE_STAGE2_BINARY_REPO_DIR" ]] && axe_info "creating $_AXE_STAGE2_BINARY_REPO_DIR" && mkdir -pv "$_AXE_STAGE2_BINARY_REPO_DIR"
+	[[ ! -d "$_AXE_STAGE3_BINARY_REPO_DIR" ]] && axe_info "creating $_AXE_STAGE3_BINARY_REPO_DIR" && mkdir -pv "$_AXE_STAGE3_BINARY_REPO_DIR"
+	[[ ! -d "$_AXE_LOCAL_BINARY_REPO_DIR" ]] && axe_info "creating $_AXE_LOCAL_BINARY_REPO_DIR" && mkdir -pv "$_AXE_LOCAL_BINARY_REPO_DIR"
+	[[ ! -d "$_AXE_RAM_BUILD_DIR" ]] && axe_info "creating $_AXE_RAM_BUILD_DIR" && mkdir -pv "$_AXE_RAM_BUILD_DIR"
+	[[ ! -d "$_AXE_HDD_BUILD_DIR" ]] && axe_info "creating $_AXE_HDD_BUILD_DIR" && mkdir -pv "$_AXE_HDD_BUILD_DIR"
+	[[ ! -d "$_AXE_LOGS_DIR" ]] && axe_info "creating $_AXE_LOGS_DIR" && mkdir -pv "$_AXE_LOGS_DIR"
+	[[ ! -d "$_AXE_GIT_PKGBUILD_DIR" ]] && axe_info "creating $_AXE_GIT_PKGBUILD_DIR" && mkdir -pv "$_AXE_GIT_PKGBUILD_DIR"
+	[[ ! -d "$_AXE_GIT_BIN_DIR" ]] && axe_info "creating $_AXE_GIT_BIN_DIR" && mkdir -pv "$_AXE_GIT_BIN_DIR"
+	[[ ! -d "$_AXE_PACMAN_CACHE_DIR" ]] && axe_info "creating $_AXE_PACMAN_CACHE_DIR" && mkdir -pv "$_AXE_PACMAN_CACHE_DIR"
+	[[ ! -d "$_AXE_FAIL_BUILD_LOGS_DIR" ]] && axe_info "creating $_AXE_FAIL_BUILD_LOGS_DIR" && mkdir -pv "$_AXE_FAIL_BUILD_LOGS_DIR"
+	[[ ! -d "$_AXE_GIT_BASE_INFORMATION_DIR" ]] && axe_info "creating $_AXE_GIT_BASE_INFORMATION_DIR" && mkdir -pv "$_AXE_GIT_BASE_INFORMATION_DIR"
+	[[ ! -d "$_AXE_LISTS_DIR" ]] && axe_info "creating $_AXE_LISTS_DIR" && mkdir -pv "$_AXE_LISTS_DIR"
+	
+}
+
+function check_for_toolchain_change()
+{
+	axe_block "Start of check_for_toolchain_change"
+	
+	if [[ $_AXE_MULTILIB_SUFFIX == "undecided" ]]; then
+		#check for multilib toolchain
+		if [[ -s "/usr/lib32" ]]; then
+			axe_info "detected /usr/lib32, obviously assuming i am running on a multilib system"
+			_AXE_MULTILIB_SUFFIX="-multilib"
+			save_settings
+			if [[ $(grep "#\[multilib\]" "$_AXE_PACMAN_CONF_PATH") ]]; then
+				axe_info "found that your multilib repo is commented out, the arch installer does this as standard, am enabling it"
+				echo "#entry added by axe " >> "$_AXE_PACMAN_CONF_PATH"
+				echo "[multilib]" >> "$_AXE_PACMAN_CONF_PATH"
+				echo "SigLevel = PackageRequired" >> "$_AXE_PACMAN_CONF_PATH"
+				echo "Include = /etc/pacman.d/mirrorlist" >> "$_AXE_PACMAN_CONF_PATH"
+				echo "#end of axe entry" >> "$_AXE_PACMAN_CONF_PATH"			
+			fi
+		else
+			axe_info "did not detected /usr/lib32, obviously assuming i am running on a pure x64 system"
+			_AXE_MULTILIB_SUFFIX=""
+			save_settings
+		fi
+	
+	else
+		[[ $_AXE_MULTILIB_SUFFIX == "" &&  -s "/usr/lib32" ]] && axe_warning "toolchain swiched to multilib, marking toolchain for recompilation" && _AXE_TOOLCHAIN_OPTIMUM_YES=0 && save_settings
+		[[ $_AXE_MULTILIB_SUFFIX == "-multilib" && ! -s "/usr/lib32" ]] && axe_warning "toolchain swiched to pure x64 /x86, marking toolchain for recompilation" && _AXE_TOOLCHAIN_OPTIMUM_YES=0 && save_settings
+	fi
+
+}
+
+function check_makepkg_valid()
+{
+	axe_block "Start of check_makepkg_valid"
+	
+	local _axe_difference
+	_axe_difference=""
+	
+	#check that my tag is in makepkg and also decide who modified it me or the human
+	if [[ $(cat "$_AXE_MAKEPKG_CONF_PATH" | grep '#AXE modified this file') ]]; then
+		axe_info "well looking promissing i found the tag in makpkg.conf it says i modified the file, now lets check if its been altered"
+		cmp "$_AXE_MAKEPKG_CONF_PATH" "$_AXE_DIR/makepkg.conf.axemodified"
+		if [[ $? -eq 0 ]]; then
+			axe_info "good as far as i can tell you have not altered makepkg.conf since i modified makepkg.conf"
+		else
+			axe_fuck "HEY someone , or some other script , has altered makepkg.conf since i first modified it"
+			axe_fuck "do you want me to use my original backup and continue ? i am assuming most of my system files have been untouched"
+			axe_fuck "and this little hickup is due to me having been ctrlc_ed during a later compile phase where i am compiling with -O3"
+			axe_difference=$(cmp "$_AXE_MAKEPKG_CONF_PATH" "$_AXE_DIR/makepkg.conf.axemodified")
+			axe_fuck "this is what the differences are $_axe_difference"
+			axe_menu_active Y "to continue and use my backup or ${_AXE_ANY_OTHER_KEY} to just ignore the situation"
+			read -s -n1 _AXE_TMP_CHAR
+			axe_info "you pressed ${bldcyn}$_AXE_TMP_CHAR"
+			if [[ "$_AXE_TMP_CHAR" == "y" || "$_AXE_TMP_CHAR" == "Y" ]]; then
+				cp -pf "$_AXE_DIR/makepkg.conf.axemodified" "$_AXE_MAKEPKG_CONF_PATH"
+				if [[ ! $? -eq 0 ]]; then
+					axe_fuck " failed to recover backup"
+					any_key
+					return 1
+				fi	
+			else
+				axe_info "ok ignoring any makepkg.conf changes, hope you know what your doing good luck , will show you makepkg.conf so you can look for yourself"
+				any_key
+				nano "$_AXE_MAKEPKG_CONF_PATH"
+			fi
+		fi
+	fi
+
+	if [[ $(cat "$_AXE_MAKEPKG_CONF_PATH" | grep '#THE HUMAN modified this file') ]]; then
+		axe_info "well looking promissing i found the tag in makpkg.conf it says the human modified the file"
+		cmp "$_AXE_MAKEPKG_CONF_PATH" "$_AXE_DIR/makepkg.conf.humanmodified"
+		if [[ $? -eq 0 ]]; then
+			axe_info "good as far as i can tell you have not altered makepkg.conf since i setup the system"
+		else
+			axe_fuck "HEY someone , or some other script, has altered $_AXE_MAKEPKG_CONF_PATH since you first modified it"
+			axe_fuck "do you want me to use my original backup of your handywork and continue ? i am assuming most of my system files have been untouched"
+			axe_fuck "and this little hickup is someones brainfart, by the way this is the same makepkg.conf that you chose to modify for youself"
+			_axe_difference=$(cmp "$_AXE_MAKEPKG_CONF_PATH" $_AXE_DIR/makepkg.conf.humanmodified)
+			axe_fuck " this is what the differences are $_axe_difference"
+			axe_menu_active Y "to continue and use my backup of the humans efforts or ${_AXE_ANY_OTHER_KEY} to just ignore the situation"
+			read -s -n1 _AXE_TMP_CHAR
+			axe_info "you pressed ${bldcyn}$_AXE_TMP_CHAR"
+			if [[ "$_AXE_TMP_CHAR" == "y" || "$_AXE_TMP_CHAR" == "Y" ]]; then
+				cp -pf $_AXE_DIR/makepkg.conf.humanmodified "$_AXE_MAKEPKG_CONF_PATH"
+				if [[ ! $? -eq 0 ]]; then
+					axe_fuck " failed to recover backup"
+					any_key
+					return 1
+				fi
+			else
+				axe_info "ok ignoring any makepkg.conf changes, hope you know what your doing good luck , will show you makepkg.conf so you can look for yourself"
+				any_key
+				nano "$_AXE_MAKEPKG_CONF_PATH"
+			fi
+		fi
+	fi
+
+
+}
+
+function intro()
+{
+	if [[ "$_AXE_SKIP_INTRO_YES" -eq 0 ]]; then
+
+
+		axe_info "Hi I am  ${_AXE_AER} 
+I am a script designed to massivly rebuild a sizable part of the Archlinux distribution in a particular direction.
+
+My Directives........
+1) AXE does not like systemd..... remove systemd at root by rebuliding around udev-fork
+2) AXE does not like consolekit, polkit, pulseaudio, sudo, socialweb, colord..... remove as much as possible of them at root by clever patching and recompilation
+and either replace thyeir functionality or remove the need for them entirly
+3) AXE likes root.... make it easy and convenient to run everything as root, AXE uses its own far more effective security model
+4) AXE only supports GTK 2/3, ( at the moment )
+5) AXE likes Cinnamon
+
+Why? ........ The nature of GCC and linux as a concept allows a user to tailor their Opperating system (oS) to the exact peramiters of the hardware
+and to their personal tastes, by doing so one can achieve considerable speed and stability improvements.
+
+Why not Gentoo or any other source based distro? ..... Good question, gentoo is an excellent alternative to AXE and you should seariously consider
+gentoo before trying AXE, having said that Archlinux is very very cutting edge and progressive, whereas gentoo is not, and portage is very
+hard to learn and not as featurefull as pacman/makepkg"
+
+		any_key
+		axe_info "How is all this achieved ? ..... Obviously as a script i cannot be imparted with all the code necessary to modify Arch
+so extensivly, so my creator has produced a collection of over 60 PKGBUILD's to do the job, they replace standard Arclinux packages
+during the build process, these PKGBUILDS have been carefully modified to replace systemd and achieve my other goals,
+they are also being maintained inline with arch packages and in some cases are better/newer ( depends on opinion ).
+The github locations for the repo,s i use are
+
+git://github.com/Jubei-Mitsuyoshi/AXE-BINARIES.git ...... which contains I7 compiled binaries (more on that later )
+git://github.com/Jubei-Mitsuyoshi/AXE-PKGBUILDS.git ..... which contains all my creators original work
+
+all the modifications are open to public scrutiny and critisism."
+
+		any_key
+		axe_info "What i need........ i am designed to be run on a bare archlinux setup the following install medium have been tested
+
+	archlinux-2012.08.04-dual.iso
+	archlinux-2012.08.26-x86_64.iso
+	archlinux-2012.09.07-dual.iso
+	
+I also need a stable and quick wired internet connection, ( wifi support on the way ) all the other dependencies etc i will fetch for myself.
+
+What do you need....... you need to have some basic knowlege of pacman, and understand what optimisation flags mean,
+not because you need to do any programming or anything but because i will be asking you some questions about your
+personal optimisation preferences, it would be usefull if you knew what the fuck i was talking about.
+	
+How long does it take ..... About 24 hours on an I7 laptop, considerably less on a similar desktop
+
+When i'm done ....... you will have a collection of optimised binaries, FULLY and beautifully crafted for your processor
+you can then share these binaries with other AXE users so they can enjoy full optimisatioon without the headache
+of compiling "
+	
+	
+		axe_menu_active Y "to display it next time press ${_AXE_ANY_OTHER_KEY} if you want to skip this intro screen from now on press"
+		read -s -n1 _AXE_TMP_CHAR
+		axe_info "you pressed ${bldcyn}$_AXE_TMP_CHAR"
+		if 	[[ "$_AXE_TMP_CHAR" == "y" || "$_AXE_TMP_CHAR" == "Y" ]]; then
+			_AXE_SKIP_INTRO_YES=0
+		else
+			_AXE_SKIP_INTRO_YES=1
+			save_settings
+		fi
+	
+	else
+		axe_info "respecting settings and skipping intro"
+	fi
+	
+	
+	
+}

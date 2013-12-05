@@ -1,0 +1,253 @@
+function version_check_pkgbuild_dir()
+{
+	axe_block "Start of version_check_pkgbuild_dir $1 with $2"
+
+	#first argument is path to folder to check
+		#xxx /path/to/folder
+	#argument 2 integrity check overide
+		# --noint ... no integ check
+		# --int ... do integ check
+	
+	#reset list so we dont get confused over runs
+	echo "" > "$_AXE_LISTS_DIR/version_problems.list"
+	#remove updatables from last run
+	rm -fr $_AXE_DEV_UPDATE_EXPORT_DIR/*
+
+	local _axe_process_problem
+	local _axe_version_problem
+	local _axe_abs_location
+	local _axe_vercmp_return
+	local _axe_pkgname
+	local _axe_return
+	local _axe_ver_array_dir
+	local _axe_ver_array_abs
+	local _axe_ver_array_aur
+	
+	_axe_pkgname=0
+	_axe_version_problem=0
+	_axe_process_problem=0
+	_axe_abs_location=""
+	_axe_vercmp_return=0
+	_axe_return=0
+	
+	abs
+	
+		#	_axe_abs_ver= ${_axe_ver_array_abs[1]}
+		#	_axe_abs_rel= ${_axe_ver_array_abs[2]}
+		#	_axe_dir_ver= "${_axe_ver_array_dir[1]}"
+		#	_axe_dir_rel= $_arch_rel = "${_axe_ver_array_dir[3]}"
+		#	_axe_dir_axe_rel= "${_axe_ver_array_dir[4]}"
+		#	axe native flag = "${_axe_ver_array_dir[5]}"
+		#	split package flag = "${_axe_ver_array_dir[5]}"
+		#	_axe_aur_ver  "${_axe_ver_array_aur[1]}"
+		#   _axe_aur_rel   "${_axe_ver_array_aur[2]}"
+			
+			#output order of axe_get_vers 
+				#$pkgname(0) 
+				#$pkgver(1)  
+				#$pkgrel(2) 
+				#$_arch_rel(3)
+				#$_axe_rel(4) / axe_native_rel (4)
+				#axe native flag = "axis" / "arch" (5)
+				#split package flag = "split" / "single" (6)
+	
+	cd $1
+	
+	find * -prune -type d > "$_AXE_LISTS_DIR/version_check_pkgbuild_dir_working.list"
+	cd /root/
+	
+	
+	for _axe_pkgname in $(cat "$_AXE_LISTS_DIR/version_check_pkgbuild_dir_working.list"); do
+		
+		_axe_abs_location=""
+		_axe_abs_location=$(find "/var/abs" -type d -name "$_axe_pkgname")
+	
+		unset _axe_ver_array_dir
+		_axe_ver_array_dir=($(axe_get_vers "$1/$_axe_pkgname"))
+		
+		#check if pck is on axe native list
+		if [[ "${_axe_ver_array_dir[5]}" == 'axis' ]]; then
+			axe_warn "$_axe_pkgname is an AXE native package hence keeping up to date is on you"
+		else
+	
+			if [[ $_axe_abs_location ]]; then
+			
+				axe_info "$_axe_pkgname found in ABS"
+				axe_info "abs location for  $_axe_pkgname is $_axe_abs_location"
+			
+				unset _axe_ver_array_abs
+				_axe_ver_array_abs=($(axe_get_vers "$_axe_abs_location"))
+				if [[ "${_axe_ver_array_dir[0]}" == "$_axe_pkgname" && "${_axe_ver_array_abs[0]}" == "$_axe_pkgname" ]]; then
+				
+			
+					#						abs ver										abs rel                                       dir ver										dir rel
+					if [[ ! "${_axe_ver_array_abs[1]}" == "null"  &&  ! "${_axe_ver_array_abs[2]}" == "null"  && ! "${_axe_ver_array_dir[1]}" == "null" && ! "${_axe_ver_array_dir[3]}" == "null" ]]; then
+					
+						axe_info "$_axe_pkgname version from ABS is ${bldcyn} ${_axe_ver_array_abs[1]}-${_axe_ver_array_abs[2]}" 
+						axe_info "$_axe_pkgname version from $1 is ${bldcyn} ${_axe_ver_array_dir[1]}-${_axe_ver_array_dir[3]}" 
+						axe_info "$_axe_pkgname axe pkgrel from $1 is ${bldcyn} ${_axe_ver_array_dir[4]}"
+						
+						_axe_vercmp_return=$(vercmp "${_axe_ver_array_abs[1]}-${_axe_ver_array_abs[2]}" "${_axe_ver_array_dir[1]}-${_axe_ver_array_dir[3]}")
+						
+						[[ $_axe_vercmp_return -eq 0 ]] && axe_info "versions are the same ${bldcyn} no action taken" 
+						[[ $_axe_vercmp_return -lt 0 ]] && axe_info "$1 version is greater than ABS version ${bldcyn} no action taken" 
+						if [[ $_axe_vercmp_return -gt 0 ]]; then
+							_axe_version_problem=1
+							axe_fuck "$_axe_pkgname is out of date" 
+							echo "+++++++++OLDER++++++++++++ $_axe_pkgname from $1  is older than the ABS ABS VER=${_axe_ver_array_abs[1]}-${_axe_ver_array_abs[2]} DEV VER=${_axe_ver_array_dir[1]}-${_axe_ver_array_dir[3]}" >> "$_AXE_LISTS_DIR/version_problems.list"
+							find /var/abs -type d -name "$_axe_pkgname" -exec cp -rpf {} "$_AXE_DEV_UPDATE_EXPORT_DIR" \; 2> /dev/null
+							if [[ -d "$_AXE_DEV_UPDATE_EXPORT_DIR/$_axe_pkgname" ]]; then 
+								stamp_pkgbuild "$_AXE_DEV_UPDATE_EXPORT_DIR/$_axe_pkgname"
+								if [[ ! $? -eq 0 ]]; then 
+									echo "+++++++++++TAG++++++++++++++ $_axe_pkgname from $1  failed to accept axe pkgrel tag" >> "$_AXE_LISTS_DIR/version_problems.list"
+									axe_fuck " refused to accept axe pkgrel tag please check why "
+									any_key
+									_axe_process_problem=1
+								fi
+							else
+								axe_fuck "failed to find and copy  $_axe_pkgname from the ABS ( which by the way is impossible )"
+								_axe_process_problem=1
+								any_key
+							fi
+						fi	
+						
+						if [[ $2 == "--int" && $_axe_vercmp_return -lt 1 ]]; then 
+							cd "$1/$_axe_pkgname"
+							axe_info "applying integrity checks"
+							makepkg --asroot --nobuild --noconfirm --clean --force --nodeps
+							if [[ ! $? -eq 0 ]]; then 
+								echo "+++++++INTEGRITY CHECKS++++++++ $_axe_pkgname from $1  failed integrity checks" >> "$_AXE_LISTS_DIR/version_problems.list"
+								axe_fuck "$_axe_pkgname from $1  failed integrity checks, normally not serious but can be please check the output above" && any_key
+								_axe_process_problem=1
+								cd /root/
+							else
+								cd /root/
+							fi
+						fi
+						
+						#clean up
+						rm -fr "$_AXE_DEV_UPDATE_EXPORT_DIR/$_axe_pkgname/src"
+						rm -fr "$_AXE_DEV_UPDATE_EXPORT_DIR/$_axe_pkgname/pkg"
+			
+					else
+						[[ "${_axe_ver_array_abs[1]}" == "null" ]] && axe_fuck "canot obtain a version for $_axe_pkgname from $_axe_abs_location/PKGBUILD"  && echo "++++++++++ NO VERSION +++++++++ $_axe_pkgname did not provide a version from ABS " >> "$_AXE_LISTS_DIR/version_problems.list"
+						[[ "${_axe_ver_array_dir[1]}" == "null" ]] && axe_fuck "canot obtain a version for $_axe_pkgname from $1/$_axe_pkgname/PKGBUILD" && echo "++++++++++ NO VERSION +++++++++ $_axe_pkgname did not provide a version from $1 " >> "$_AXE_LISTS_DIR/version_problems.list"
+						[[ "${_axe_ver_array_abs[2]}" == "null" ]] && axe_fuck "canot obtain a rel for $_axe_pkgname from $_axe_abs_location/PKGBUILD"  && echo "++++++++++ NO REL ==+++++++++ $_axe_pkgname did not provide a rel from ABS " >> "$_AXE_LISTS_DIR/version_problems.list"
+						[[ "${_axe_ver_array_dir[3]}" == "null" ]] && axe_fuck "canot obtain a rel for $_axe_pkgname from $1/$_axe_pkgname/PKGBUILD" && echo "++++++++++ NO REL ==+++++++++ $_axe_pkgname did not provide a rel from $1 " >> "$_AXE_LISTS_DIR/version_problems.list"
+						any_key
+						_axe_process_problem=1
+					fi
+					
+				else
+					axe_fuck "returned value of axe_get_vers is incorrect it should be $_axe_pkgname but returned ${_axe_ver_array_dir[0]} or ${_axe_ver_array_abs[0]}"
+					any_key
+				fi
+					
+					
+				
+			else
+				axe_info "$_axe_pkgname not found in the ABS looking for it from AUR" 
+				cd "$_AXE_RAM_BUILD_DIR"
+				yaourt -G --noconfirm "$_axe_pkgname"
+				cd /root/
+				if [[ -d "$_AXE_RAM_BUILD_DIR/$_axe_pkgname" ]]; then
+					
+					axe_info "$_axe_pkgname found in AUR" 
+					unset _axe_ver_array_aur
+					_axe_ver_array_aur=($(axe_get_vers "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"))
+					
+					
+					#						aur ver										aur rel                                       dir ver										dir rel
+					if [[ ! "${_axe_ver_array_aur[1]}" == "null"  && ! "${_axe_ver_array_aur[2]}" == "null"  && ! "${_axe_ver_array_dir[1]}" == "null" && ! "${_axe_ver_array_dir[3]}" == "null" ]]; then
+					
+						axe_info "$_axe_pkgname version from $1 is ${bldcyn} ${_axe_ver_array_dir[1]}-${_axe_ver_array_dir[3]}" 
+						axe_info "$_axe_pkgname version from AUR is ${bldcyn} ${_axe_ver_array_aur[1]}-${_axe_ver_array_aur[2]}" 
+						axe_info "$_axe_pkgname native axe pkgrel from $1 is ${bldcyn} ${_axe_ver_array_dir[4]}"
+						axe_info "$_axe_pkgname axe pkgrel from $1 is ${bldcyn} ${_axe_ver_array_dir[4]}"
+						
+						_axe_vercmp_return=$(vercmp "${_axe_ver_array_aur[1]}-${_axe_ver_array_aur[2]}" "${_axe_ver_array_dir[1]}-${_axe_ver_array_dir[3]}")
+						
+						[[ $_axe_vercmp_return -eq 0 ]] && axe_info "versions are the same ${bldcyn} no action taken" 
+						[[ $_axe_vercmp_return -lt 0 ]] && axe_info "$1 version is greater than AUR version ${bldcyn} no action taken" 
+						if [[ $_axe_vercmp_return -gt 0 ]]; then
+							axe_fuck "$_axe_pkgname is out of date"
+							_axe_version_problem=1
+							echo "+++++++++OLDER++++++++++++ $_axe_pkgname from $1  is older than the AUR AUR VER=${_axe_ver_array_aur[1]}-${_axe_ver_array_aur[2]} DEV VER=${_axe_ver_array_dir[1]}-${_axe_ver_array_dir[3]}" >> "$_AXE_LISTS_DIR/version_problems.list"
+							#apply axe tag 
+							stamp_pkgbuild "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"
+							if [[ $? -eq 0 ]]; then 
+								cp -fpr "$_AXE_RAM_BUILD_DIR/$_axe_pkgname" "$_AXE_DEV_UPDATE_EXPORT_DIR"
+								if [[ $? -eq 0 ]]; then 
+									axe_info "$_axe_pkgname tagged and exported to $_AXE_DEV_UPDATE_EXPORT_DIR"
+									rm -fr "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"
+								else
+									axe_fuck "$_axe_pkgname failed to move to $_AXE_DEV_UPDATE_EXPORT_DIR please check why !"
+									any_key
+									rm -fr "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"
+									_axe_process_problem=1
+								fi
+							else
+								echo "+++++++++++TAG++++++++++++++ $_axe_pkgname from $_AXE_RAM_BUILD_DIR/$_axe_pkgname failed to accept axe pkgrel tag" >> "$_AXE_LISTS_DIR/version_problems.list"
+								axe_fuck "$_axe_pkgname from $_AXE_RAM_BUILD_DIR/$_axe_pkgname failed to accept axe pkgrel tag please check why !"
+								any_key
+								_axe_process_problem=1
+							fi
+						fi
+						
+						if [[ $2 == "--int" && $_axe_vercmp_return -lt 1 ]]; then 
+							cd "$1/$_axe_pkgname"
+							axe_info "applying integrity checks"
+							makepkg --asroot --nobuild --noconfirm --clean --force --nodeps
+							if [[ ! $? -eq 0 ]]; then 
+								echo "+++++++INTEGRITY CHECKS++++++++ $_axe_pkgname from $1  failed integrity checks" >> "$_AXE_LISTS_DIR/version_problems.list"
+								axe_fuck "$1/$_axe_pkgname failed integrity checks normally my creators fuckup in git plese correct youself or have patience and try again" 
+								any_key
+								_axe_process_problem=1
+								cd /root/
+								rm -fr "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"
+							else
+								cd /root/
+								rm -fr "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"
+							fi
+						else
+							cd /root/
+							rm -fr "$_AXE_RAM_BUILD_DIR/$_axe_pkgname"
+						fi
+						
+						#clean up
+						rm -fr "$_AXE_DEV_UPDATE_EXPORT_DIR/$_axe_pkgname/src"
+						rm -fr "$_AXE_DEV_UPDATE_EXPORT_DIR/$_axe_pkgname/pkg"
+						
+					else
+						[[ "${_axe_ver_array_aur[1]}" == "null" ]] && axe_fuck "canot obtain a version for $_axe_pkgname from AUR"  && echo "++++++++++ NO VERSION +++++++++ $_axe_pkgname did not provide a version from AUR" >> "$_AXE_LISTS_DIR/version_problems.list"
+						[[ "${_axe_ver_array_dir[1]}" == "null" ]] && axe_fuck "canot obtain a version for $_axe_pkgname from $1/$_axe_pkgname/PKGBUILD" && echo "++++++++++ NO VERSION +++++++++ $_axe_pkgname did not provide a version from $1 " >> "$_AXE_LISTS_DIR/version_problems.list"
+						[[ "${_axe_ver_array_aur[2]}" == "null" ]] && axe_fuck "canot obtain a rel for $_axe_pkgname from AUR"  && echo "++++++++++ NO REL ==+++++++++ $_axe_pkgname did not provide a rel from AUR " >> "$_AXE_LISTS_DIR/version_problems.list"
+						[[ "${_axe_ver_array_dir[3]}" == "null" ]] && axe_fuck "canot obtain a rel for $_axe_pkgname from $1/$_axe_pkgname/PKGBUILD" && echo "+++++++++++ NO REL ==+++++++++ $_axe_pkgname did not provide a rel from $1 " >> "$_AXE_LISTS_DIR/version_problems.list"
+						any_key
+						_axe_process_problem=1
+					fi
+					
+				else
+					
+					axe_fuck "$_axe_pkgname does not exist in AUR in ABS and is not a axe native package !!!!!!!!!!!!"
+					axe_fuck "native tag returns as ${_axe_ver_array_dir[5]}" 
+					echo "$_axe_pkgname was not found in the ABS or AUR to make a version check, ignore this if  axe native package" >> "$_AXE_LISTS_DIR/version_problems.list"
+					any_key
+					_axe_process_problem=1
+				
+				fi
+			
+			fi
+		
+		fi
+	done
+	
+	
+	
+	[[ $_axe_process_problem -eq 0 && $_axe_version_problem -eq 0 ]] && _axe_return=0
+	[[ $_axe_process_problem -eq 0 && $_axe_version_problem -eq 1 ]] && _axe_return=1
+	[[ $_axe_process_problem -eq 1 && $_axe_version_problem -eq 0 ]] && _axe_return=2
+	[[ $_axe_process_problem -eq 1 && $_axe_version_problem -eq 1 ]] && _axe_return=3
+	
+	return $_axe_return
+}

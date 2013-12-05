@@ -1,0 +1,71 @@
+nspr 
+js 
+exempi 
+python-lxml 
+gnome-python 
+python-markupsafe 
+python2-imaging 
+gobject-introspection 
+polkit-axe 
+perl-yaml-syck 
+xmlto 
+consolekit --install --nocon   --nofail --nosuc --tag --nocheck
+polkit-gnome 
+accountsservice --install --nocon   --nofail --nosuc --tag --nocheck
+dconf 
+libgnomekbd 
+at-spi2-core 
+at-spi2-atk 
+cogl 
+json-glib 
+clutter 
+libgee 
+caribou 
+dbus-glib 
+gjs 
+libcddb 
+libcdio 
+libgnome-keyring 
+gnome-keyring 
+upower 
+libgtop 
+libpwquality 
+libproxy 
+glib-networking 
+libsoup 
+udisks 
+udisks2 
+gvfs 
+obexd 
+gnome-bluetooth 
+gnome-desktop 
+gnome-menus 
+gnome-menus2 
+tdb 
+gconf --install --nocon   --nofail --nosuc --tag --nocheck
+libgksu 
+gksu 
+libcanberra --install --nocon   --nofail --nosuc --tag --nocheck
+notification-daemon 
+gnome-terminal 
+telepathy-glib 
+gnome-panel --install --nocon   --nofail --nosuc --tag --nocheck
+gnome-settings-daemon --install --nocon   --nofail --nosuc --tag --nocheck
+muffin-wm --install --nocon   --nofail --nosuc --tag --nocheck
+muffin-git 
+#telepathy-logger 
+gnome-control-center --install --nocon   --nofail --nosuc --tag --nocheck
+gnome-session --install --nocon   --nofail --nosuc --tag --nocheck
+cinnamon 
+#cinnamon-git 
+nemo-fm 
+nemo-git 
+pup-volume-monitor 
+alacarte 
+connman-gnome-git 
+xfce4-session 
+gparted 
+packagekit 
+zenity 
+metacity 
+compiz-ubuntu --install-force --nocon   --nofail --nosuc --tag --nocheck

@@ -1,0 +1,18 @@
+#!/bin/bash
+unset pkgname depends makedepends optdepends
+. "$1/PKGBUILD"
+for dep in "${depends[@]}"; do
+	# lose the version comparator, if any
+	depname=${dep%%[<>=]*} && echo "$depname"
+done
+for dep in "${makedepends[@]}"; do
+	# lose the version comparator, if any
+	depname=${dep%%[<>=]*} && echo "$depname"
+done
+if [[ $2 == "--opt" ]]; then
+	for dep in "${optdepends[@]/:*}"; do
+		# lose the version comaparator, if any
+		depname=${dep%%[<>=]*} && echo "$depname"
+	done
+fi
+exit 0

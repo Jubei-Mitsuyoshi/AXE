@@ -1,0 +1,10 @@
+nvclock --install --nocon   --nofail --nosuc --tag --nocheck
+nvdock --install --nocon   --nofail --nosuc --tag --nocheck
+libvdpau --install --con   --nofail --nosuc --tag --nocheck
+libcl --install --con   --nofail --nosuc --tag --nocheck
+nvidia-utils --install --con   --nofail --nosuc --tag --nocheck
+nvidia --install --con   --nofail --nosuc --tag --nocheck
+cuda --install --nocon   --nofail --nosuc --tag --nocheck
+nvidia-cg-toolkit --install --nocon   --nofail --nosuc --tag --nocheck
+#pycuda out of date in arch and not compiling, waiting for arch to sort it out
+#python2-pycuda --install --nocon   --nofail --nosuc --tag --nocheck
